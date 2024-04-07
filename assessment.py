@@ -21,6 +21,7 @@ class Point:
         self.x = x
         self.y = y
 
+"""
 class Trips:
 	def __init__(self):
 		self.totalTrips = {}
@@ -56,6 +57,8 @@ class Trips:
 		sys.stdout.write("[" + ",".join(routes) + "]\n")
 		totalCost = (500*drivers) + totalDistance
 		print(totalCost)
+
+"""
 
 class Route:
 	def __init__(self, route, pickup, dropoff):
@@ -116,15 +119,7 @@ class Routes:
 		for r in self.allRoutes:
 			r.print()
 
-
-
-
-
-
 allRoutes = Routes()
-trips = Trips()
-tripsToPickup = Trips()
-tripsToReturn = Trips()
 origin = Point(0, 0)
 with open(sys.argv[1]) as f:
 	next(f)
@@ -137,66 +132,42 @@ with open(sys.argv[1]) as f:
 		dropoff = dataToPoint(data[2])
 
 		allRoutes.addRoute(Route(route, pickup, dropoff))
-		euc = calcDistanceTwoPoints(pickup, dropoff)
-		distPickup = calcDistanceTwoPoints(origin, pickup)
-		distReturn = calcDistanceTwoPoints(dropoff, origin)
 
-		trips.add(route, euc)
-		tripsToPickup.add(route, distPickup)
-		tripsToReturn.add(route, distReturn)
-
-	# naive solution 
-	# This solution has all the drivers returning to and from the depot after every trip 
-	# and we optimize the driver schedule based on how many overall trips we can fit in 
-	# between the max allotted time (12*60)
-	# NOTE this is bad this is just a base case to set everything up to work
-print(allRoutes)
-trips.sortVals()
-tripsToPickup.sortVals()
-tripsToReturn.sortVals()
-
-trips.printTrips()
-tripsToPickup.printTrips()
-tripsToReturn.printTrips()
-
-trips.printFormatted()
-
-route1 = allRoutes.getRoute(1)
-print(route1)
-nearestPickup = allRoutes.findNearestPickup(route1.dropoff)
-print(nearestPickup.route)
-
-nearestFromOrigin = allRoutes.findNearestPickup(origin)
-print(nearestFromOrigin.route)
-
+"""
+	Better solution that takes a greedy approach when choosing whether to move to the next closes node in the plane or return to the origin
+"""
 distance = 0
 loc = origin
 result = []
 oneTrip = []
 while(len(allRoutes.allRoutes) > 0):
 	nearestFromOrigin = allRoutes.findNearestPickup(loc)
-	oneTrip.append(nearestFromOrigin.route)
+	oRoute = nearestFromOrigin.route
+	oPick = nearestFromOrigin.pickup
+	oDrop = nearestFromOrigin.dropoff
+	oneTrip.append(oRoute)
 
-	distance += calcDistanceTwoPoints(loc, nearestFromOrigin.pickup)
-	distance += calcDistanceTwoPoints(nearestFromOrigin.pickup, nearestFromOrigin.dropoff)
+	distance += calcDistanceTwoPoints(loc, oPick)
+	distance += calcDistanceTwoPoints(oPick, oDrop)
 
-	distOrigin = calcDistanceTwoPoints(nearestFromOrigin.dropoff, origin)
-	nearestPickup = allRoutes.findNearestPickup(nearestFromOrigin.dropoff, nearestFromOrigin.route)
+	distOrigin = calcDistanceTwoPoints(oDrop, origin)
+	nearestPickup = allRoutes.findNearestPickup(oDrop, oRoute)
 	if nearestPickup is None:
 		result.append(oneTrip.copy())
 		break
 
-	distNearestPickup = calcDistanceTwoPoints(nearestFromOrigin.dropoff, nearestPickup.pickup)
+	distNearestPickup = calcDistanceTwoPoints(oDrop, nearestPickup.pickup)
 
 	if nearestPickup.calculatePickupDropoffOrigin() > distOrigin and distance + nearestPickup.calculatePickupDropoffOrigin() + distNearestPickup < MAX_TIME:
-		loc = nearestFromOrigin.dropoff
-		allRoutes.removeRoute(nearestFromOrigin.route)
+		loc = oDrop
+		allRoutes.removeRoute(oRoute)
 			
 	else:
 		result.append(oneTrip.copy())
 		oneTrip.clear()
 		distance = 0
-		allRoutes.removeRoute(nearestFromOrigin.route)
+		allRoutes.removeRoute(oRoute)
 		loc = origin
 			
-print(result)
+for x in result:
+	sys.stdout.write("[" + ",".join(str(c) for c in x) + "]\n")
