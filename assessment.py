@@ -21,45 +21,6 @@ class Point:
         self.x = x
         self.y = y
 
-"""
-class Trips:
-	def __init__(self):
-		self.totalTrips = {}
-
-	def add(self, route, distance):
-		self.totalTrips[route] = distance
-
-	def sortVals(self):
-		self.totalTrips = sorted(self.totalTrips.items(), key=operator.itemgetter(1))
-
-	def printTrips(self):
-		print(self.totalTrips)
-
-	def printFormatted(self):
-		routes = []
-		distance = 0
-		totalDistance = 0
-		drivers = 1
-		for trip in self.totalTrips:
-			route = trip[0]
-			tripDist = float(trip[1])
-			totalDistance += tripDist
-			if distance + tripDist < MAX_TIME:
-				distance += tripDist
-				routes.append(route)
-			else:
-				drivers += 1
-				sys.stdout.write("[" + ",".join(routes) + "]\n")
-				routes.clear()
-				routes.append(route)
-				distance = tripDist
-
-		sys.stdout.write("[" + ",".join(routes) + "]\n")
-		totalCost = (500*drivers) + totalDistance
-		print(totalCost)
-
-"""
-
 class Route:
 	def __init__(self, route, pickup, dropoff):
 		self.route = int(route)
@@ -134,12 +95,15 @@ with open(sys.argv[1]) as f:
 		allRoutes.addRoute(Route(route, pickup, dropoff))
 
 """
-	Better solution that takes a greedy approach when choosing whether to move to the next closes node in the plane or return to the origin
+	Better solution that takes a greedy nextdoor neighbor approach when choosing whether to move to the next closes node in the plane or return to the origin
+	An optimization - while the selection of the node mid route has some logic, the selection of the node from the origin only takes distance
+	into account. Instead we can try and find a solution that optimization origin node selection
 """
 distance = 0
 loc = origin
 result = []
 oneTrip = []
+passAgain = Routes()
 while(len(allRoutes.allRoutes) > 0):
 	nearestFromOrigin = allRoutes.findNearestPickup(loc)
 	oRoute = nearestFromOrigin.route
@@ -153,7 +117,10 @@ while(len(allRoutes.allRoutes) > 0):
 	distOrigin = calcDistanceTwoPoints(oDrop, origin)
 	nearestPickup = allRoutes.findNearestPickup(oDrop, oRoute)
 	if nearestPickup is None:
-		result.append(oneTrip.copy())
+		if len(oneTrip) == 1: 
+			passAgain.addRoute(Route(oRoute, oPick, oDrop))
+		else:
+			result.append(oneTrip.copy())
 		break
 
 	distNearestPickup = calcDistanceTwoPoints(oDrop, nearestPickup.pickup)
@@ -163,10 +130,51 @@ while(len(allRoutes.allRoutes) > 0):
 		allRoutes.removeRoute(oRoute)
 			
 	else:
-		result.append(oneTrip.copy())
+		if len(oneTrip) == 1: 
+			passAgain.addRoute(Route(oRoute, oPick, oDrop))
+		else:
+			result.append(oneTrip.copy())
 		oneTrip.clear()
 		distance = 0
 		allRoutes.removeRoute(oRoute)
+		loc = origin
+
+
+# I'm not a huge fan of this block of logic here and since I don't have time to implement this idea fully, here is my thought process:
+# the above block of code would get moved into a function. we then continue to iterate over the remainders of the single nodes until
+# it is mathematically impossible to create more connections. The idea being that drivers cost vastly more so we want to be sure that
+# we've created as many edges as possible between all the nodes that we can
+loc = origin
+distance = 0
+oneTrip.clear()
+while(len(passAgain.allRoutes) > 0):
+	nearestFromOrigin = passAgain.findNearestPickup(loc)
+	oRoute = nearestFromOrigin.route
+	oPick = nearestFromOrigin.pickup
+	oDrop = nearestFromOrigin.dropoff
+	oneTrip.append(oRoute)
+
+	distance += calcDistanceTwoPoints(loc, oPick)
+	distance += calcDistanceTwoPoints(oPick, oDrop)
+
+	distOrigin = calcDistanceTwoPoints(oDrop, origin)
+	nearestPickup = passAgain.findNearestPickup(oDrop, oRoute)
+	
+	if nearestPickup is None:
+		result.append(oneTrip.copy())
+		break
+
+	distNearestPickup = calcDistanceTwoPoints(oDrop, nearestPickup.pickup)
+
+	if nearestPickup.calculatePickupDropoffOrigin() > distOrigin and distance + nearestPickup.calculatePickupDropoffOrigin() + distNearestPickup < MAX_TIME:
+		loc = oDrop
+		passAgain.removeRoute(oRoute)
+			
+	else:
+		result.append(oneTrip.copy())
+		oneTrip.clear()
+		distance = 0
+		passAgain.removeRoute(oRoute)
 		loc = origin
 			
 for x in result:
