@@ -81,7 +81,6 @@ class Routes:
 			r.print()
 
 allRoutes = Routes()
-origin = Point(0, 0)
 with open(sys.argv[1]) as f:
 	next(f)
 	for line in f:
@@ -98,7 +97,9 @@ with open(sys.argv[1]) as f:
 	Better solution that takes a greedy nextdoor neighbor approach when choosing whether to move to the next closes node in the plane or return to the origin
 	An optimization - while the selection of the node mid route has some logic, the selection of the node from the origin only takes distance
 	into account. Instead we can try and find a solution that optimization origin node selection
+	NOTE: The pass again logic is NOT something that I would merge into production code in it's current state, it's more of an idea to whittle down the total cost
 """
+origin = Point(0, 0)
 distance = 0
 loc = origin
 result = []
@@ -125,10 +126,11 @@ while(len(allRoutes.allRoutes) > 0):
 
 	distNearestPickup = calcDistanceTwoPoints(oDrop, nearestPickup.pickup)
 
+	# if the total cost to complete another route is greater than the cost to return to the depot 
+	# AND the cost of the trip with the current distance is less than the max time allotted
 	if nearestPickup.calculatePickupDropoffOrigin() > distToOrigin and distance + nearestPickup.calculatePickupDropoffOrigin() + distNearestPickup < MAX_TIME:
 		loc = oDrop
 		allRoutes.removeRoute(oRoute)
-			
 	else:
 		if len(oneTrip) == 1: 
 			passAgain.addRoute(Route(oRoute, oPick, oDrop))
