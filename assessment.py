@@ -114,7 +114,7 @@ while(len(allRoutes.allRoutes) > 0):
 	distance += calcDistanceTwoPoints(loc, oPick)
 	distance += calcDistanceTwoPoints(oPick, oDrop)
 
-	distOrigin = calcDistanceTwoPoints(oDrop, origin)
+	distToOrigin = calcDistanceTwoPoints(oDrop, origin)
 	nearestPickup = allRoutes.findNearestPickup(oDrop, oRoute)
 	if nearestPickup is None:
 		if len(oneTrip) == 1: 
@@ -125,7 +125,7 @@ while(len(allRoutes.allRoutes) > 0):
 
 	distNearestPickup = calcDistanceTwoPoints(oDrop, nearestPickup.pickup)
 
-	if nearestPickup.calculatePickupDropoffOrigin() > distOrigin and distance + nearestPickup.calculatePickupDropoffOrigin() + distNearestPickup < MAX_TIME:
+	if nearestPickup.calculatePickupDropoffOrigin() > distToOrigin and distance + nearestPickup.calculatePickupDropoffOrigin() + distNearestPickup < MAX_TIME:
 		loc = oDrop
 		allRoutes.removeRoute(oRoute)
 			
